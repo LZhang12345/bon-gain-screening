@@ -1,0 +1,14 @@
+{
+  "candidates": 20,
+  "support_configurations": 20,
+  "selected": [
+    "A-code-5",
+    "C-code-5",
+    "B-math-3",
+    "D-math-1",
+    "B-math-1"
+  ],
+  "selected_mean_gain": 0.350694,
+  "random_mean_gain": 0.207917,
+  "frames": 23
+}

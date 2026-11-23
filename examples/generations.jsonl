@@ -1,0 +1,3 @@
+{"prompt_id": "p1", "completions": ["We add 3 and 4 to get \\boxed{7}", "3 + 4 = \\boxed{7}", "The total is \\boxed{7}", "So the answer is \\boxed{8}"], "correct": [1, 1, 1, 0]}
+{"prompt_id": "p2", "completions": ["Halving 18 gives \\boxed{9}", "18 / 2 = \\boxed{6}", "The answer is \\boxed{12}", "Half of 18 is \\boxed{9}"], "correct": [1, 0, 0, 1]}
+{"prompt_id": "p3", "completions": ["Try 5, then \\boxed{25}", "Squaring gives \\boxed{20}", "It is \\boxed{15}", "So \\boxed{10}"], "correct": [0, 0, 0, 0]}
