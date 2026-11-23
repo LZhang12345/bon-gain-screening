@@ -21,7 +21,7 @@
 1. For each configuration and temperature, write one JSON object per prompt with `completions` (a list of strings) and `correct` (a list of 0 or 1, one per completion). See `examples/generations.jsonl`.
 2. Compute the statistics: `python -m bon_screen features generations.jsonl --domain math`.
 3. For the configurations you score with your reward model, compute the gain with `bon_screen.gain.bon_gain(scores, correct)`.
-4. Put one row per configuration and temperature in a CSV with the columns of `examples/screening_table.csv`. Leave `gain` empty for configurations you have not scored.
+4. Put one row per configuration and temperature in a CSV with the columns of `examples/screening_table.csv`. Fill in `gain` for all rows of a scored configuration and leave it empty for all rows of a candidate. Each candidate row needs finite values for the four features and temperature.
 5. Rank them: `python -m bon_screen screen table.csv --top 5`.
 
 The `group` column decides which configurations are kept together when the penalty is chosen. Use one group per base checkpoint and task domain, as in the paper.

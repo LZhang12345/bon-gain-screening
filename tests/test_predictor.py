@@ -65,6 +65,8 @@ def test_fixed_penalty_and_top_k():
     x = np.arange(10, dtype=float)[:, None]
     model = GainPredictor(alpha=0.1).fit(x, 2.0 * x[:, 0])
     assert top_k(model.predict(x), 3).tolist() == [9, 8, 7]
+    with pytest.raises(ValueError, match="Predicted gains must be finite"):
+        top_k([0.2, np.nan], 2)
     with pytest.raises(ValueError):
         GainPredictor().fit(x, x[:, 0])
 

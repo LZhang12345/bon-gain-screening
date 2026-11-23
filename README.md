@@ -100,7 +100,10 @@ The penalty is chosen by cross-validation that keeps whole groups of configurati
 ## Use it in your code
 
 ```python
-from bon_screen import GainPredictor, bon_gain, compact_features, design_matrix, top_k
+from pathlib import Path
+
+from bon_screen import bon_gain, compact_features, screen
+from bon_screen.cli import read_table
 
 prompts = [
     {"completions": ["... \\boxed{7}", "... \\boxed{7}", "... \\boxed{8}"], "correct": [1, 1, 0]},
@@ -110,13 +113,12 @@ features = compact_features(prompts, domain="math")
 
 gain = bon_gain(scores=[[0.2, 0.9, 0.1], [0.7, 0.3, 0.1]], correct=[[1, 1, 0], [1, 0, 1]])
 
-x_scored = design_matrix(scored_features, scored_temperatures)
-model = GainPredictor().fit(x_scored, scored_gains, groups=scored_groups)
-predicted = model.predict(design_matrix(new_features, new_temperatures))
-shortlist = top_k(predicted, k=5)
+support, candidates = read_table(Path("examples/screening_table.csv"))
+result = screen(support, candidates, k=5)
+print(result.selected)
 ```
 
-`compact_features` takes the sampled completions for one configuration and temperature. `bon_gain` needs reward-model scores and is only computed for the configurations you score. In the last block, `scored_features` and `new_features` are lists of such feature dictionaries, one per configuration and temperature, with matching lists of temperatures, and `scored_groups` names the base checkpoint and task domain of each scored row. `screen` in `bon_screen.screening` does the fitting, averages predictions over temperatures, and returns the shortlist in one call.
+`compact_features` takes the sampled completions for one configuration and temperature. `bon_gain` needs reward-model scores and is only computed for the configurations you score. The last three lines use the bundled synthetic table. `screen` fits on the scored configurations, averages predictions across temperatures for each candidate, and returns the shortlist.
 
 ## Screen your own models
 
@@ -125,7 +127,7 @@ python -m bon_screen features examples/generations.jsonl --domain math
 python -m bon_screen screen examples/screening_table.csv --top 3
 ```
 
-`features` reads one JSON object per prompt with `completions` and `correct`. `screen` reads a CSV with one row per configuration and temperature. Rows with a `gain` value train the predictor, and rows without one are ranked. See [the reproduction notes](docs/reproduction.md) for the input format.
+`features` reads one JSON object per prompt with `completions` and `correct`. `screen` reads a CSV with one row per configuration and temperature. Give every temperature row for a configuration a `gain` value to use it for training, or leave all of its gains blank to rank it as a candidate. See [the reproduction notes](docs/reproduction.md) for the input format.
 
 ## Results in the paper
 
@@ -136,7 +138,7 @@ The paper evaluates 56 configurations (40 math, 16 code) from three base-model f
 - 0.85 on gains measured with a second reward model, ArmoRM, without refitting the predictor fitted on Skywork gains
 - 0.78 to 0.94 when each post-training method is held out in turn
 
-The predictor does not transfer to majority-vote gains, and its correlation is negative when the whole code domain is held out. These numbers come from the paper's models and evaluation. This repository provides the method. See [the reproduction notes](docs/reproduction.md) for what is and is not included.
+In the paper's earlier 18-feature analysis, rank correlation is near zero for majority-vote gains and negative when the entire programming domain is held out. See [the reproduction notes](docs/reproduction.md) for the release scope.
 
 ## Repository guide
 

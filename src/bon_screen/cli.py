@@ -24,18 +24,23 @@ def run_features(args: argparse.Namespace) -> None:
 def read_table(path: Path) -> tuple[list[dict], list[dict]]:
     support, candidates = [], []
     with path.open(newline="") as handle:
-        for row in csv.DictReader(handle):
-            record = {
-                "configuration": row["configuration"],
-                "group": row["group"],
-                "temperature": float(row["temperature"]),
-                "features": {name: float(row[name]) for name in FEATURES},
-            }
-            if row.get("gain", "").strip():
-                record["gain"] = float(row["gain"])
-                support.append(record)
-            else:
-                candidates.append(record)
+        reader = csv.DictReader(handle)
+        for row in reader:
+            try:
+                record = {
+                    "configuration": row["configuration"],
+                    "group": row["group"],
+                    "temperature": float(row["temperature"]),
+                    "features": {name: float(row[name]) for name in FEATURES},
+                }
+                gain = (row.get("gain") or "").strip()
+                if gain:
+                    record["gain"] = float(gain)
+                    support.append(record)
+                else:
+                    candidates.append(record)
+            except (KeyError, TypeError, ValueError) as exc:
+                raise ValueError(f"Invalid screening CSV at line {reader.line_num}: {exc}") from exc
     return support, candidates
 
 
@@ -64,11 +69,15 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
+    parser = build_parser()
+    args = parser.parse_args(argv)
     if args.command == "demo":
         print_demo(args.seed)
     elif args.command == "features":
         run_features(args)
     else:
-        run_screen(args)
+        try:
+            run_screen(args)
+        except ValueError as exc:
+            parser.error(str(exc))
     return 0

@@ -21,7 +21,7 @@ All four are computed from the same sampled answers, one value per configuration
 | `completion_length_variance` | Standard deviation of completion lengths in characters within each prompt, averaged across prompts. | no |
 | `first_correct_sample_position_median` | Index of the first correct sample for each prompt with at least one correct sample, then the median across prompts. | yes |
 
-Prompts with fewer than two completions or no extractable answer are skipped. The first statistic needs correctness labels, so the method assumes a labeled validation set.
+The two answer-distribution statistics skip prompts with fewer than two completions or no extractable answers. Completion-length spread uses prompts with at least two completions. Only the first-correct-sample statistic requires correctness labels.
 
 ## The predictor
 
@@ -31,9 +31,9 @@ $$
 g(c, T) = \boldsymbol\beta^\top \mathbf{x}(c, T) + \gamma\,(T - 0.7) + \varepsilon(c, T).
 $$
 
-Features are standardized on the training rows only. The ridge penalty is chosen from $\{10^{-3}, 10^{-2}, 10^{-1}, 1, 10, 100\}$ by cross-validation in which every fold keeps whole groups of configurations together (`bon_screen.predictor.select_alpha`). `GainPredictor` wraps this, and `leave_one_group_out` reproduces the held-out evaluation: each group of configurations that share a base checkpoint and task domain is held out in turn.
+Features are standardized on the training rows only. The ridge penalty is chosen from $\{10^{-3}, 10^{-2}, 10^{-1}, 1, 10, 100\}$ by cross-validation in which every fold keeps whole groups of configurations together (`bon_screen.predictor.select_alpha`). `GainPredictor` wraps this, and `leave_one_group_out` holds out each group of configurations that share a base checkpoint and task domain in turn.
 
-The NumPy implementation gives the same predictions as a scikit-learn pipeline of `StandardScaler` and `Ridge` tuned with `GridSearchCV` over `GroupKFold`, which is the protocol used for the paper's grouped evaluation.
+The NumPy implementation follows the paper's grouped rerun, which reports Spearman correlation of 0.898. On the synthetic example, its predictions match a scikit-learn pipeline of `StandardScaler` and `Ridge` tuned with `GridSearchCV` over `GroupKFold`.
 
 ## Screening
 
@@ -43,7 +43,7 @@ The NumPy implementation gives the same predictions as a scikit-learn pipeline o
 4. Fit the predictor on the support panel and rank the remaining configurations.
 5. Run the reward model only on the configurations ranked highest.
 
-`bon_screen.screening.screen` performs steps 4 and 5. Predictions are averaged over temperatures for each configuration before ranking.
+`bon_screen.screening.screen` performs step 4 and returns the shortlist for scoring in step 5. Predictions are averaged over temperatures for each configuration before ranking.
 
 ## What the paper adds
 

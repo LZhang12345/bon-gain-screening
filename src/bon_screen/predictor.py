@@ -176,4 +176,6 @@ def top_k(predicted_gain: Sequence[float], k: int) -> np.ndarray:
     scores = np.asarray(predicted_gain, dtype=np.float64)
     if not 1 <= k <= len(scores):
         raise ValueError("k must be between 1 and the number of candidates")
+    if not np.all(np.isfinite(scores)):
+        raise ValueError("Predicted gains must be finite")
     return np.argsort(-scores, kind="mergesort")[:k]

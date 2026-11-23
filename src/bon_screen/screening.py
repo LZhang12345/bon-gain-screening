@@ -39,14 +39,20 @@ def screen(
     names: Sequence[str] = FEATURES,
     alpha: float | None = None,
 ) -> ScreeningResult:
+    candidate_names = [r["configuration"] for r in candidates]
+    overlap = {r["configuration"] for r in support}.intersection(candidate_names)
+    if overlap:
+        raise ValueError(f"Configurations must be entirely scored or unscored: {', '.join(sorted(overlap))}")
+    x_candidates = design_matrix([r["features"] for r in candidates], [r["temperature"] for r in candidates], names)
+    invalid = np.flatnonzero(~np.isfinite(x_candidates).all(axis=1))
+    if len(invalid):
+        raise ValueError(f"Candidate {candidate_names[invalid[0]]!r} has a non-finite feature or temperature")
+
     x_support = design_matrix([r["features"] for r in support], [r["temperature"] for r in support], names)
     y_support = [r["gain"] for r in support]
     groups = [r["group"] for r in support]
     model = GainPredictor(alpha=alpha).fit(x_support, y_support, None if alpha is not None else groups)
-    x_candidates = design_matrix([r["features"] for r in candidates], [r["temperature"] for r in candidates], names)
-    configurations, predicted = average_by_configuration(
-        [r["configuration"] for r in candidates], model.predict(x_candidates)
-    )
+    configurations, predicted = average_by_configuration(candidate_names, model.predict(x_candidates))
     chosen = top_k(predicted, min(k, len(configurations)))
     return ScreeningResult(
         configurations=configurations,
